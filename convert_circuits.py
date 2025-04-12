@@ -10,15 +10,13 @@ from qiskit.qasm2 import load
 from itertools import product
 import os
 
-global_var_counter = 1
-
 def get_unique_block(n: int) -> list:
     """
         Purpose: Generate n unique, sequential integers, starting
                  from global_var_counter.
 
         Input:
-            - n: The number of unique integers.
+            - n (integer): The number of unique integers.
         Output:
             - Returns the next n unique integers using a global counter.
     """
@@ -39,26 +37,6 @@ def computational_basis_state_to_formula(state, variables):
    z = np.array(state)
    assert np.all((z == 0) | (z == 1))
    return [[int(i)] for i in (-1)**(z+1) * variables]
-
-
-def flip_to_big_endian(matrix):
-    """
-    Reorders the rows and columns of a matrix from little-endian to big-endian.
-
-    Args:
-        matrix: A 2^n x 2^n unitary matrix (as NumPy array)
-
-    Returns:
-        The matrix in big-endian basis ordering.
-    """
-    n = int(np.log2(matrix.shape[0]))
-    assert matrix.shape == (2**n, 2**n)
-
-    def reverse_bits(x, bits=n):
-        return int(bin(x)[2:].zfill(bits)[::-1], 2)
-
-    perm = [reverse_bits(i) for i in range(2**n)]
-    return matrix[np.ix_(perm, perm)]
 
 
 def circuit_to_cnf(circuit, initial_state, final_state):
@@ -92,7 +70,6 @@ def circuit_to_cnf(circuit, initial_state, final_state):
     cnf_constraints = []
     for gate_instruction in circuit.data:
         unitary = gate_instruction.matrix
-        #unitary = flip_to_big_endian(matrix=unitary)
         qubits = gate_instruction.qubits
         indices = [q._index for q in qubits]
         k = len(qubits)
@@ -107,11 +84,6 @@ def circuit_to_cnf(circuit, initial_state, final_state):
             external_map[i+1] = external_output_variables[e]
 
         reshaped_unitary = unitary.reshape((2,) * (2 * k))
-        print("unitary :")
-        print(unitary)
-        print()
-        print("reshaped: ")
-        print(reshaped_unitary)
         internal_variables = get_unique_block(2**(2*k))
         #print("internal_variables: ", internal_variables)
         for bits, internal_variable in zip(product([0,1], repeat = 2*k), internal_variables):
@@ -128,8 +100,6 @@ def circuit_to_cnf(circuit, initial_state, final_state):
     final_external_variables = np.array(final_external_variables)
     #print("Final external: ", final_external_variables)
     final_state_constraints = computational_basis_state_to_formula(state=final_state, variables=np.array(final_external_variables))
-    #final_state_constraints = (-1)**np.array(final_state) * np.array(final_external_variables)
-    #final_state_constraints = [[int(i)] for i in final_state_constraints]
     
     # Add initial and final state constraints
     cnf_constraints.extend(starting_state_constraints)
@@ -139,16 +109,15 @@ def circuit_to_cnf(circuit, initial_state, final_state):
 
 def save_and_return_dimacs_with_weights(clauses, weights, filename=None):
     """
-    Purpose: Generates a DIMACS CNF string with complex weights and optionally
-             saves it to a file.
+        Purpose: Generates a DIMACS CNF string with complex weights and optionally
+                saves it to a file.
 
-    Inputs:
-        - clauses (list of lists of integers): Each inner list is a clause.
-        - weights (dictionary): Maps integer literals to complex weights.
-        - filename (string): Optional path to output file.
-
-    Output:
-        dimacs_str (string): A string representing the DIMACS CNF content.
+        Inputs:
+            - clauses (list of lists of integers): Each inner list is a clause.
+            - weights (dictionary): Maps integer literals to complex weights.
+            - filename (string): Optional path to output file.
+        Output:
+            dimacs_str (string): A string representing the DIMACS CNF content.
     """
     num_vars = max(abs(lit) for clause in clauses for lit in clause)
     num_clauses = len(clauses)
