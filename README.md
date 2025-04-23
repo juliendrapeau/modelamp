@@ -55,14 +55,15 @@ In `example.py`, one can specify a circuit and get the desired amplitude. For sm
 ## To Do
 
 Here's a list of tasks left to do:
-- I (Jeremy) used ChatGPT to write a bunch of helper functions that I haven't thoroughly tested: `generate_brickwork_circuit.py`, `get_unique_block`, `computational_basis_state_to_formula`, `save_and_return_dimacs_with_weights`, `compute_amplitude_z_array`, and all of `call_ganak.py`. We need to test them.
-- We need to also test the functions I wrote.
-- For `circuit_to_cnf`, I reshape the unitary matrix and then do `reshaped_unitary[bits[::-1]]`. Can you (Julien) understand the reshaping process of the unitary and why we need to reverse the order of the bits? I think it has something to do with Qiskit's [little-endian ordering](https://docs.quantum.ibm.com/guides/bit-ordering).
-- `circuit_to_cnf` currently assumes that there is only one QuantumRegister object in Qiskit that labels the qubits (I call for their indices). Does the function work for circuits with multiple QuantumRegisters? Is there an easy generalization, or should we indicate in our code that we *must* have one register?
-- Think about how to save data. Currently, I use `Data/circuits/n()/` to store circuits, and then in `convert_circuits.py` we can save the CNF files. Alternatively, `example.py` shows how we can use temporary CNF files without saving them (since we have the underlying circuit). What is best? And which data should we save? I'm thinking: circuit, amplitude, execution time.
-- How do we calculate execution time? In `call_ganak.py`, I take the output from Ganak, but it's unclear to me if this is the right one to use. Uncomment line 52 of `example.py` to see the output from Ganak.
-- Does `write_cnf_to_tempfile` have any memory issues? I think it deletes the file after, but I haven't thoroughly tested it.
-- Write a script to batch launch many circuits, storing the output from Ganak into files.
-- Write a script that takes the results and plots them according to time and number of qubits.
-- Test out the code against Google's Sycamore circuits, which you can find in `.tar.gz` files [here](https://datadryad.org/dataset/doi:10.5061/dryad.k6t1rj8).
-- In general, look for any code improvements, speedups, and documentation improvements.
+
+- [ ] I (Jeremy) used ChatGPT to write a bunch of helper functions that I haven't thoroughly tested: `generate_brickwork_circuit.py`, `get_unique_block`, `computational_basis_state_to_formula`, `save_and_return_dimacs_with_weights`, `compute_amplitude_z_array`, and all of `call_ganak.py`. We need to test them.
+- [ ] We need to also test the functions I wrote.
+- [ ] For `circuit_to_cnf`, I reshape the unitary matrix and then do `reshaped_unitary[bits[::-1]]`. Can you (Julien) understand the reshaping process of the unitary and why we need to reverse the order of the bits? I think it has something to do with Qiskit's [little-endian ordering](https://docs.quantum.ibm.com/guides/bit-ordering).
+- [ ] `circuit_to_cnf` currently assumes that there is only one QuantumRegister object in Qiskit that labels the qubits (I call for their indices). Does the function work for circuits with multiple QuantumRegisters? Is there an easy generalization, or should we indicate in our code that we *must* have one register?
+- [ ] Think about how to save data. Currently, I use `Data/circuits/n()/` to store circuits, and then in `convert_circuits.py` we can save the CNF files. Alternatively, `example.py` shows how we can use temporary CNF files without saving them (since we have the underlying circuit). What is best? And which data should we save? I'm thinking: circuit, amplitude, execution time.
+- [ ] How do we calculate execution time? In `call_ganak.py`, I take the output from Ganak, but it's unclear to me if this is the right one to use. Uncomment line 52 of `example.py` to see the output from Ganak.
+- [ ] Does `write_cnf_to_tempfile` have any memory issues? I think it deletes the file after, but I haven't thoroughly tested it.
+- [ ] Write a script to batch launch many circuits, storing the output from Ganak into files.
+- [ ] Write a script that takes the results and plots them according to time and number of qubits.
+- [ ] Test out the code against Google's Sycamore circuits, which you can find in `.tar.gz` files [here](https://datadryad.org/dataset/doi:10.5061/dryad.k6t1rj8).
+- [ ] In general, look for any code improvements, speedups, and documentation improvements.

@@ -1,63 +1,126 @@
 """
-Purpose: Define a circuit unitary U and calculate <z|U|x> using the ganak model counter.
+Purpose: Example script to compute the amplitude of a bitstring for a quantum circuit using Complex Weighted Model Counting (CWMC) and compare it with the statevector simulator and tensor network methods.
 
 Date created: 2025-04-11
 """
 
+import json
+import os
+import tempfile
+
 import numpy as np
-from qiskit import QuantumCircuit
-from convert_circuits import circuit_to_cnf, save_and_return_dimacs_with_weights
-from call_ganak import write_cnf_to_tempfile, run_ganak_on_cnf_file, parse_ganak_complex_output
 from qiskit.quantum_info import Statevector
-from generate_circuits import generate_brickwork_circuit
 
-def compute_amplitude_z_array(circuit: QuantumCircuit, z_array: np.ndarray):
-    """
-        Purpose: Compute ⟨z|ψ⟩ where z is given as a NumPy array of bits.
-
-        Inputs:
-            - circuit: A Qiskit QuantumCircuit.
-            - z_array: NumPy array of bits (e.g., np.array([0,1,0])).
-        Returns:
-            A complex amplitude ⟨z|ψ⟩.
-    """
-    psi = Statevector.from_instruction(circuit)
-
-    # Convert z_array to bitstring, then reverse for little-endian
-    z_str = ''.join(str(b) for b in z_array[::-1])
-    z_index = int(z_str, 2)
-    return psi[z_index]
+from modelamp.benchmark.sv_solver import SVSolver
+from modelamp.benchmark.tn_solver import TNSolver
+from modelamp.cwmc import cwmc_solver
+from modelamp.cwmc.cwmc_solver import CWMCSolver
+from modelamp.generate_circuits import generate_brickwork_circuit
 
 
 if __name__ == "__main__":
-    num_qubits = 5
-    num_layers = 3
-    #circuit = QuantumCircuit(num_qubits)
-    #circuit.h(1)
-    #circuit.y(0)
-    
-    circuit = generate_brickwork_circuit(num_qubits=num_qubits, num_layers=num_layers)
 
-    initial_state = np.zeros(num_qubits, dtype=int) # |0>
-    final_state = np.random.choice(a = [0,1], size = num_qubits)   # |z>
-    formula, weights = circuit_to_cnf(circuit=circuit, initial_state=initial_state, final_state=final_state)
-    cnf = save_and_return_dimacs_with_weights(clauses=formula, weights=weights)
-    #print("CNF: ")
-    #print(cnf)
-    print("Number of constraints: ", len(formula))
-    
-    cnf_path = write_cnf_to_tempfile(cnf)
-    #print(cnf_path)
-    stdout, stderr = run_ganak_on_cnf_file(cnf_path)
-    #print(stdout)
-    model_count, time = parse_ganak_complex_output(stdout)
-    print("Time       : ", time)
-    print("Model count: ", model_count)
+    # PARAMETERS
 
+    num_qubits = 10
+    num_layers = 5
+    instance = 0
+    rng = np.random.default_rng(seed=instance)
+    
+    verbose = False
+    data_dir = "data/example/"  # None for temporary directory
+
+
+    # DIRECTORY SETUP
+
+    dir_prefix = os.path.join(f"q{num_qubits}" + f"-l{num_layers}" + f"-i{instance}")
+
+    # Create the output directory if it doesn't exist
+    # If data_dir is None, create a temporary directory
+    if data_dir is None:
+        data_dir = tempfile.TemporaryDirectory().name
+        os.makedirs(data_dir, exist_ok=True)
+        os.makedirs(os.path.join(data_dir, dir_prefix), exist_ok=True)
+    else:
+        os.makedirs(data_dir, exist_ok=True)
+        os.makedirs(os.path.join(data_dir, dir_prefix), exist_ok=True)
+
+    output_dir = os.path.join(data_dir, dir_prefix)
+    qasm_path = os.path.join(output_dir, "circuit.qasm")
+
+
+    # CIRCUIT GENERATION
+
+    # Define initial and final states
+    initial_state = np.zeros(num_qubits, dtype=int)  # |0>
+    final_state = np.random.choice(a=[0, 1], size=num_qubits)  # |z>
+
+    # Generate a random quantum circuit
+    circuit = generate_brickwork_circuit(
+        num_qubits=num_qubits, num_layers=num_layers, file_path=qasm_path, rng=rng
+    )
+
+
+    # COMPUTE AMPLITUDE WITH CWMC
+
+    # Compute the amplitude using Complex Weighted Model Counting (CWMC)
+    cwmc_solver = CWMCSolver(output_dir=output_dir)
+    model_count, time = cwmc_solver.compute_amplitude(
+        circuit=circuit,
+        initial_state=initial_state,
+        final_state=final_state,
+        verbose=verbose,
+    )
+
+    print("Amplitude with CWMC: ", model_count)
+    print("Time: ", time)
+    print()
+    
+    
+    # COMPUTE AMPLITUDE WITH STATEVECTOR
+
+    # Avoid using the statevector simulator for large circuits
     if num_qubits <= 10:
-        # Compare with statevector
-        amplitude = compute_amplitude_z_array(circuit=circuit, z_array=final_state)
-        print("Amplitude  : ", amplitude)
-        if num_qubits <= 5:
-            print("Psi: ")
-            print(Statevector.from_instruction(circuit))
+
+        sv_solver = SVSolver()
+        amplitude, time = sv_solver.compute_amplitude(
+            circuit=circuit,
+            final_state=final_state,
+        )
+
+        print("Amplitude with SV: ", amplitude)
+        print("Time: ", time)
+        print()
+
+
+    # COMPUTE AMPLITUDE WITH TENSOR NETWORKS
+
+    tn_solver = TNSolver()
+    amplitude, time = tn_solver.compute_amplitude(
+        circuit_file_path=qasm_path,
+        final_state=final_state,
+    )
+    
+    print("Amplitude with TN: ", amplitude)
+    print("Time: ", time)
+    print()
+    
+    # Print the statevector if the number of qubits is small
+    if num_qubits <= 5:
+        print("Statevector: ")
+        print(Statevector.from_instruction(circuit))
+            
+    # Save results
+    with open(os.path.join(output_dir, "results.json"), "w") as f:
+        json.dump(
+            {
+                "num_qubits": num_qubits,
+                "num_layers": num_layers,
+                "instance": instance,
+                "initial_state": initial_state.tolist(),
+                "final_state": final_state.tolist(),
+                "amplitude": [model_count.real, model_count.imag],
+                "time": time,
+            },
+            f,
+        )
