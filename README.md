@@ -8,7 +8,7 @@ The big idea behind this project is that we can represent quantum circuits and s
 
 First, we encode the initial state as a formula. For simplicity, the input state will be $\ket{0}^{\otimes n}$. We will encode this in the first $n$ variables of $x$, so $x_1, x_2, \ldots, x_n$. The corresponding formula is then $F_{\ket{0}} \equiv \bigwedge_{i = 1}^n - x_i$. Note that a subtraction sign is a logical negation, and it's there to mean that the solution to the formula is when all variables are set to False (0).
 
-Second, we encode each gate as a formula. Let $U$ be a $2^k \times 2^k$ unitary. We can reshape the matrix into one of size $(2,2,2\ldots,2)$, so $U_{t}$ with $t \in \left\\{0,1\right\\}^{2k}$ labels the indices of $U$. Each unitary gate will have $2k$ "external" variables associated to it (for the input/output of the gate), and $2^{2k}$ "internal" variables associated to the elements of $U$. Let $x_{i}, x_{i+1}, \ldots, x_{i+k-1}$ be the external input variables, let $u_{i+k}, x_{i+k+1}, \ldots, u_{i+k+2^{2k}-1}$ be internal variables associated to $U$, and let $x_{i+k+2^{2k}}, \ldots, x_{i+2k+2^{2k}-1}$ be the external output variables. For compact notation, define $X \equiv \left(x_{i}, x_{i+1}, \ldots, x_{i+k-1}, x_{i+k+2^{2k}}, \ldots, x_{i+2k+2^{2k}-1} \right)$ be the external variables. The corresponding formula for element $t \in \left\\{0,1\right\\}^{2k}$ of $U$ is then:
+Second, we encode each gate as a formula. Let $U$ be a $2^k \times 2^k$ unitary. We can reshape the matrix into one of size $(2,2,2\ldots,2)$, so $U_{t}$ with $t \in \left\\{0,1\right\\}^{2k}$ labels the indices of $U$. Each unitary gate will have $2k$ "external" variables associated to it (for the input/output of the gate), and $2^{2k}$ "internal" variables associated to the elements of $U$. Let $x_{i}, x_{i+1}, \ldots, x_{i+k-1}$ be the external input variables, let $u_{i+k}, u_{i+k+1}, \ldots, u_{i+k+2^{2k}-1}$ be internal variables associated to $U$, and let $x_{i+k+2^{2k}}, \ldots, x_{i+2k+2^{2k}-1}$ be the external output variables. For compact notation, define $X \equiv \left(x_{i}, x_{i+1}, \ldots, x_{i+k-1}, x_{i+k+2^{2k}}, \ldots, x_{i+2k+2^{2k}-1} \right)$ be the external variables. The corresponding formula for element $t \in \left\\{0,1\right\\}^{2k}$ of $U$ is then:
 
 $$F_{t} = -u_{t} \bigvee_{s = 1}^{2k} (-1)^{t_s} x_s.$$
 
@@ -17,7 +17,7 @@ Note that the decomposition of $U$ into components $U_t$ requires that the first
 The formula for the entire gate is then $F_U = \bigwedge_{t \in \left\\{0,1\right\\}^{2k}} F_t$.
 
 Finally, we set an explicit weight $W$ for the internal variables, based on the corresponding entry of $U$. In particular, we set:
-$$W[-u_t] \equiv U_{t}, \,\,\, W[-u_t] \equiv 1 - U_{t}.$$
+$W[-u_t] \equiv U_{t}$ and $W[u_t] \equiv 1 - U_{t}$.
 
 As an example, consider the single qubit ($k = 1$) gate $U$, with $U_{00} = a$, $U_{01} = b$, $U_{10} = c$, and $U_{11} = d$. The corresponding formula is
 
@@ -26,10 +26,14 @@ where
 $$F_{t} = -u_{t} \lor (-1)^{t_1} x_1 \lor (-1)^{t_2} x_2.$$
 
 The weights will then be:
-$$W[-u_{00}] = a, \,\,\, W[u_{00}] = 1 - a.$$
-$$W[-u_{01}] = b, \,\,\, W[u_{01}] = 1 - b.$$
-$$W[-u_{10}] = c, \,\,\, W[u_{10}] = 1 - c.$$
-$$W[-u_{11}] = d, \,\,\, W[u_{11}] = 1 - d.$$
+
+$$W[-u_{00}] = a, \text{   } W[u_{00}] = 1 - a.$$
+
+$$W[-u_{01}] = b, \text{   } W[u_{01}] = 1 - b.$$
+
+$$W[-u_{10}] = c, \text{   } W[u_{10}] = 1 - c.$$
+
+$$W[-u_{11}] = d, \text{   } W[u_{11}] = 1 - d.$$
 
 Finally, we must "connect" gates together to create a circuit. To do so, we must match external variables between sequential gates in the circuit. For example, if we apply a Hadamard gate $H$ and then a $Y$ rotation to a single qubit, then we might use the external variables $x_1$ and $x_2$ for $F_H$, and the external variables $x_3$ and $x_4$ for $F_Y$. However, we want $x_2 = x_3$ if these gates are sequential, which means setting the constraint $x_2 \iff x_3$, which is equivalent to the formula $F = (x_2 \lor -x_3) \land (-x_2 \lor x_3)$. Alternatively, we can just reuse the same variable, which is the approach we take in the code.
 
