@@ -15,21 +15,19 @@ from modelamp.benchmark.sv_solver import SVSolver
 from modelamp.benchmark.tn_solver import TNSolver
 from modelamp.cwmc import cwmc_solver
 from modelamp.cwmc.cwmc_solver import CWMCSolver
-from modelamp.generate_circuits import generate_brickwork_circuit
-
+from modelamp.gen.generate_circuits import generate_brickwork_circuit
 
 if __name__ == "__main__":
 
     # PARAMETERS
 
-    num_qubits = 10
+    num_qubits = 5
     num_layers = 5
     instance = 0
     rng = np.random.default_rng(seed=instance)
-    
+
     verbose = False
     data_dir = "data/example/"  # None for temporary directory
-
 
     # DIRECTORY SETUP
 
@@ -48,7 +46,6 @@ if __name__ == "__main__":
     output_dir = os.path.join(data_dir, dir_prefix)
     qasm_path = os.path.join(output_dir, "circuit.qasm")
 
-
     # CIRCUIT GENERATION
 
     # Define initial and final states
@@ -60,56 +57,55 @@ if __name__ == "__main__":
         num_qubits=num_qubits, num_layers=num_layers, file_path=qasm_path, rng=rng
     )
 
-
     # COMPUTE AMPLITUDE WITH CWMC
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     cwmc_solver = CWMCSolver(output_dir=output_dir)
-    model_count, time = cwmc_solver.compute_amplitude(
-        circuit=circuit,
+    amplitude_cwmc, time_cwmc = cwmc_solver.compute_amplitude(
+        circuit_file_path=qasm_path,
         initial_state=initial_state,
         final_state=final_state,
         verbose=verbose,
     )
 
-    print("Amplitude with CWMC: ", model_count)
-    print("Time: ", time)
+    print("Amplitude with CWMC: ", amplitude_cwmc)
+    print("Time with CWMC: ", time_cwmc)
     print()
-    
-    
+
     # COMPUTE AMPLITUDE WITH STATEVECTOR
 
     # Avoid using the statevector simulator for large circuits
+    amplitude_sv = None
+    time_sv = None
     if num_qubits <= 10:
 
-        sv_solver = SVSolver()
-        amplitude, time = sv_solver.compute_amplitude(
-            circuit=circuit,
+        sv_solver = SVSolver()  
+        amplitude_sv, time_sv = sv_solver.compute_amplitude(
+            circuit_file_path=qasm_path,
             final_state=final_state,
         )
 
-        print("Amplitude with SV: ", amplitude)
-        print("Time: ", time)
+        print("Amplitude with SV: ", amplitude_sv)
+        print("Time with SV: ", time_sv)
         print()
-
 
     # COMPUTE AMPLITUDE WITH TENSOR NETWORKS
 
     tn_solver = TNSolver()
-    amplitude, time = tn_solver.compute_amplitude(
+    amplitude_tn, time_tn = tn_solver.compute_amplitude(
         circuit_file_path=qasm_path,
         final_state=final_state,
     )
-    
-    print("Amplitude with TN: ", amplitude)
-    print("Time: ", time)
+
+    print("Amplitude with TN: ", amplitude_tn)
+    print("Time with TN: ", time_tn)
     print()
-    
+
     # Print the statevector if the number of qubits is small
     if num_qubits <= 5:
         print("Statevector: ")
         print(Statevector.from_instruction(circuit))
-            
+
     # Save results
     with open(os.path.join(output_dir, "results.json"), "w") as f:
         json.dump(
@@ -119,8 +115,13 @@ if __name__ == "__main__":
                 "instance": instance,
                 "initial_state": initial_state.tolist(),
                 "final_state": final_state.tolist(),
-                "amplitude": [model_count.real, model_count.imag],
-                "time": time,
+                "amplitude_cwmc": [amplitude_cwmc.real, amplitude_cwmc.imag],
+                "amplitude_sv": [amplitude_sv.real, amplitude_sv.imag] if amplitude_sv is not None else None,
+                "amplitude_tn": [amplitude_tn.real, amplitude_tn.imag],
+                "time_cwmc": time_cwmc,
+                "time_sv": time_sv,
+                "time_tn": time_tn,
+                "circuit_file_path": qasm_path,
             },
             f,
         )

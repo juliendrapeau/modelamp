@@ -25,7 +25,7 @@ class GanakSolver:
         self.ganak_path = ganak_path
         self.ganak_kwargs = ganak_kwargs
 
-    def run_ganak(self, cnf_filename: str):
+    def _run_ganak(self, cnf_filename: str):
         """
         Call Ganak from Python to solve the CNF formula using subprocess.
 
@@ -56,7 +56,7 @@ class GanakSolver:
         )
         return result.stdout, result.stderr
 
-    def parse_ganak_output(self, output: str):
+    def _parse_ganak_output(self, output: str):
         """
         Parse Ganak's output for the (complex) (weighted) model count and runtime.
 
@@ -120,8 +120,8 @@ class GanakSolver:
             The runtime in seconds.
         """
 
-        stdout, stderr = self.run_ganak(cnf_file_path)
-        count, runtime = self.parse_ganak_output(stdout)
+        stdout, stderr = self._run_ganak(cnf_file_path)
+        count, runtime = self._parse_ganak_output(stdout)
 
         if verbose:
             print("Ganak stdout: ", stdout)
