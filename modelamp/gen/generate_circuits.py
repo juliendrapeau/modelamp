@@ -14,10 +14,10 @@ Purpose: Generate random quantum circuits for later simulation. These will be "b
 Date created: 2025-04-11
 """
 
-from qiskit.quantum_info import random_unitary
+import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dump
-import numpy as np
+from qiskit.quantum_info import random_unitary
 
 
 def generate_brickwork_circuit(

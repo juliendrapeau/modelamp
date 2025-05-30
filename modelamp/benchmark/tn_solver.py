@@ -4,9 +4,12 @@ Purpose: Compute the amplitude of a bitstring for a quantum circuit using tensor
 Date created: 2025-04-23
 """
 
-from quimb.tensor.circuit import Circuit
-import numpy as np
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from quimb.tensor.circuit import Circuit
+
 
 class TNSolver:
     """
@@ -41,17 +44,35 @@ class TNSolver:
             The computed amplitude.
         """
 
+
         # Convert the circuit to a tensor network and contract it
         circuit = Circuit.from_openqasm2_file(circuit_file_path)
 
         # Change ordering?
         # final_state = "".join(str(b) for b in final_state[::-1])
 
-        start_time = time.time()
         # Compute the amplitude using the tensor network contraction
+        start_time = time.time()
         amplitude = circuit.amplitude(b=final_state, **self.contract_kwargs)
         end_time = time.time()
-        
+
         elapsed_time = end_time - start_time
 
         return amplitude, elapsed_time
+
+    def plot_circuit(self, circuit_file_path: str):
+        """
+        Plot the circuit.
+
+        Parameters
+        ----------
+        circuit: Circuit
+            The circuit to plot.
+        """
+        
+        # Load the circuit from the QASM file
+        circuit = Circuit.from_openqasm2_file(circuit_file_path)
+        
+        # Plot the circuit
+        circuit.draw()
+        plt.show()

@@ -12,7 +12,7 @@ from multiprocessing import Pool
 import numpy as np
 import tqdm
 
-from modelamp.generate_circuits import generate_brickwork_circuit
+from modelamp.gen.generate_circuits import generate_brickwork_circuit
 
 
 def generate_circuits(params):
@@ -43,9 +43,9 @@ if __name__ == "__main__":
     output_dir = "data/circuits/"
 
     parameters_space = {
-        "num_qubits": range(4, 29, 4),
-        "num_layers": range(4, 29, 4),
-        "num_instances": range(1, 2),
+        "num_qubits": range(4, 31, 2),
+        "num_layers": range(10, 11, 1),
+        "num_instances": range(1, 11),
     }
 
     output_dir_path = os.path.join(output_dir)

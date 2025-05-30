@@ -12,30 +12,34 @@ from qiskit import qasm2
 from modelamp.benchmark.sv_solver import SVSolver
 import json
 
+
 def compute_amplitude_sv(params):
 
     num_qubits, num_layers, instance, input_path = params
 
     output_dir = "data/sv/" + f"q{num_qubits}-l{num_layers}-i{instance}"
     os.makedirs(output_dir, exist_ok=True)
-
-    # Load the circuit from the QASM file
-    circuit = load(input_path, custom_instructions=qasm2.LEGACY_CUSTOM_INSTRUCTIONS)
-
+    
+    output_file_path = os.path.join(output_dir, "results.json")
+    if os.path.exists(output_file_path):
+        print(f"Results already exist for {output_file_path}. Skipping computation.")
+        return
+    
     # Generate a random initial and final state
     final_state = np.random.choice(a=[0, 1], size=num_qubits)  # |z>
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     sv_solver = SVSolver()
     model_count, time = sv_solver.compute_amplitude(
-        circuit=circuit,
+        circuit_file_path=input_path,
         final_state=final_state,
     )
-    
+
     # Save the results
-    with open(os.path.join(output_dir, "results.json"), "w") as f:
+    with open(output_file_path, "w") as f:
         json.dump(
-            {
+            {   
+                "solver": "sv",
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
                 "instance": instance,
@@ -43,6 +47,7 @@ def compute_amplitude_sv(params):
                 "time": time,
             },
             f,
+            indent=4,
         )
 
     return model_count, time

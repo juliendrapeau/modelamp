@@ -28,6 +28,11 @@ def compute_amplitude_cwmc(params):
     output_dir = "data/cwmc/" + f"q{num_qubits}-l{num_layers}-i{instance}"
     os.makedirs(output_dir, exist_ok=True)
 
+    output_file_path = os.path.join(output_dir, "results.json")
+    if os.path.exists(output_file_path):
+        print(f"Results already exist for {output_file_path}. Skipping computation.")
+        return
+
     # Load the circuit from the QASM file
     circuit = load(input_path, custom_instructions=qasm2.LEGACY_CUSTOM_INSTRUCTIONS)
 
@@ -40,16 +45,17 @@ def compute_amplitude_cwmc(params):
         output_dir=output_dir, ganak_path=ganak_path, ganak_kwargs=ganak_kwargs
     )
     model_count, time = cwmc_solver.compute_amplitude(
-        circuit=circuit,
+        circuit_file_path=input_path,
         initial_state=initial_state,
         final_state=final_state,
         verbose=False,
     )
-    
+
     # Save the results
-    with open(os.path.join(output_dir, "results.json"), "w") as f:
+    with open(output_file_path, "w") as f:
         json.dump(
             {
+                "solver": "cwmc",
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
                 "instance": instance,
@@ -57,6 +63,7 @@ def compute_amplitude_cwmc(params):
                 "time": time,
             },
             f,
+            indent=4,
         )
 
     return model_count, time
