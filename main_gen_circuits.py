@@ -1,5 +1,5 @@
 """
-Purpose: Generate random quantum circuits using the Brickwork circuit generator.
+Purpose: Generate random quantum circuits.
 
 Date created: 2025-04-23
 """
@@ -12,20 +12,48 @@ from multiprocessing import Pool
 import numpy as np
 import tqdm
 
-from modelamp.gen.generate_circuits import generate_brickwork_circuit
+from modelamp.gen.generate_circuits import (
+    generate_brickwork_circuit,
+    generate_random_u3_circuit,
+    save_circuit_to_file,
+    transpile_circuit,
+)
 
 
 def generate_circuits(params):
+    """
+    Generate a quantum circuit based on the specified parameters and save it to a file.
 
-    num_qubits, num_layers, instance, dir_prefix = params
+    Parameters
+    ----------
+    params: tuple
+        A tuple containing the circuit type, number of qubits, number of layers, instance number, and directory prefix.
+        Example: ("brickwork", 4, 10, 1, "instances/brickwork/q4-l10-i1")
+    """
+
+    circuit_type, num_qubits, num_layers, instance, dir_prefix = params
 
     file_path = os.path.join(dir_prefix, "circuit.qasm")
 
     rng = np.random.default_rng(seed=instance)
 
-    generate_brickwork_circuit(
-        num_qubits=num_qubits, num_layers=num_layers, file_path=file_path, rng=rng
-    )
+    if circuit_type == "brickwork":
+        circuit = generate_brickwork_circuit(
+            num_qubits=num_qubits, num_layers=num_layers, rng=rng
+        )
+    elif circuit_type == "random_u3":
+        circuit = generate_random_u3_circuit(
+            num_qubits=num_qubits, num_layers=num_layers, rng=rng
+        )
+    elif circuit_type == "transpiled_brickwork":
+        circuit = generate_brickwork_circuit(
+            num_qubits=num_qubits, num_layers=num_layers, rng=rng
+        )
+        circuit = transpile_circuit(circuit)
+    else:
+        raise ValueError(f"Unknown circuit type: {circuit_type}")
+
+    save_circuit_to_file(circuit, file_path)
 
     with open(os.path.join(dir_prefix, "parameters.json"), "w") as f:
         json.dump(
@@ -33,6 +61,7 @@ def generate_circuits(params):
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
                 "instance": instance,
+                "seed": instance,
             },
             f,
         )
@@ -40,7 +69,11 @@ def generate_circuits(params):
 
 if __name__ == "__main__":
 
-    output_dir = "data/circuits/"
+    circuit_type = (
+        "random_u3"  # Options: "brickwork", "random_u3", "transpiled_brickwork"
+    )
+
+    output_dir = f"instances/{circuit_type}/"
 
     parameters_space = {
         "num_qubits": range(4, 31, 2),
@@ -60,7 +93,9 @@ if __name__ == "__main__":
         dir_prefix = output_dir_path + f"q{num_qubits}-l{num_layers}-i{instance}"
         os.makedirs(dir_prefix, exist_ok=True)
 
-        parameters_list.append((num_qubits, num_layers, instance, str(dir_prefix)))
+        parameters_list.append(
+            (circuit_type, num_qubits, num_layers, instance, str(dir_prefix))
+        )
 
     with Pool() as pool:
         list(

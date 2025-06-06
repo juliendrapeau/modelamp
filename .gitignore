@@ -3,6 +3,8 @@ data/
 .vscode/
 figures/
 archives/
+quokka/
+test/
 instances/
 tools/
 
@@ -183,3 +185,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.gitignore
+.gitignore

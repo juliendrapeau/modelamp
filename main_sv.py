@@ -4,29 +4,34 @@ Purpose: Compute the amplitude of a bitstring for a quantum circuit using the st
 Date created: 2025-04-23
 """
 
-import sys
-import os
-import numpy as np
-from qiskit.qasm2 import load
-from qiskit import qasm2
-from modelamp.benchmark.sv_solver import SVSolver
 import json
+import os
+import sys
+
+import numpy as np
+from qiskit import qasm2
+from qiskit.qasm2 import load
+
+from modelamp.benchmark.sv_solver import SVSolver
 
 
 def compute_amplitude_sv(params):
 
-    num_qubits, num_layers, instance, input_path = params
+    circuit_type, num_qubits, num_layers, instance, input_path = params
 
-    output_dir = "data/sv/" + f"q{num_qubits}-l{num_layers}-i{instance}"
+    output_dir = (
+        "data/sv/" + f"{circuit_type}/" f"q{num_qubits}-l{num_layers}-i{instance}"
+    )
     os.makedirs(output_dir, exist_ok=True)
-    
+
     output_file_path = os.path.join(output_dir, "results.json")
     if os.path.exists(output_file_path):
         print(f"Results already exist for {output_file_path}. Skipping computation.")
         return
-    
-    # Generate a random initial and final state
-    final_state = np.random.choice(a=[0, 1], size=num_qubits)  # |z>
+
+    # Generate a random final state
+    rng = np.random.default_rng(seed=42)
+    final_state = rng.integers(0, 2, size=num_qubits)  # |z>
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     sv_solver = SVSolver()
@@ -38,11 +43,13 @@ def compute_amplitude_sv(params):
     # Save the results
     with open(output_file_path, "w") as f:
         json.dump(
-            {   
+            {
                 "solver": "sv",
+                "circuit_type": circuit_type,
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
                 "instance": instance,
+                "final_state": final_state.tolist(),
                 "model_count": [model_count.real, model_count.imag],
                 "time": time,
             },
@@ -55,9 +62,10 @@ def compute_amplitude_sv(params):
 
 if __name__ == "__main__":
 
-    num_qubits = int(sys.argv[1])
-    num_layers = int(sys.argv[2])
-    instance = int(sys.argv[3])
-    input_path = sys.argv[4]
+    circuit_type = str(sys.argv[1])
+    num_qubits = int(sys.argv[2])
+    num_layers = int(sys.argv[3])
+    instance = int(sys.argv[4])
+    input_path = str(sys.argv[5])
 
-    compute_amplitude_sv((num_qubits, num_layers, instance, input_path))
+    compute_amplitude_sv((circuit_type, num_qubits, num_layers, instance, input_path))

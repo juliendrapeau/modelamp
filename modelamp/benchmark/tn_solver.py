@@ -1,5 +1,5 @@
 """
-Purpose: Compute the amplitude of a bitstring for a quantum circuit using tensor networks contraction with quimb.
+Purpose: Compute the amplitude of a bitstring for a quantum circuit using tensor network contraction with quimb.
 
 Date created: 2025-04-23
 """
@@ -21,11 +21,13 @@ class TNSolver:
         Additional arguments for the tensor network contraction.
     """
 
-    def __init__(self, contract_kwargs={}):
+    def __init__(self, contract_kwargs: dict = {}):
 
         self.contract_kwargs = contract_kwargs
 
-    def compute_amplitude(self, circuit_file_path: str, final_state: np.ndarray):
+    def compute_amplitude(
+        self, circuit_file_path: str, final_state: np.ndarray
+    ) -> tuple[complex, float]:
         """
         Compute the amplitude of a bitstring for a quantum circuit using tensor network contraction with quimb
 
@@ -44,7 +46,6 @@ class TNSolver:
             The computed amplitude.
         """
 
-
         # Convert the circuit to a tensor network and contract it
         circuit = Circuit.from_openqasm2_file(circuit_file_path)
 
@@ -60,19 +61,19 @@ class TNSolver:
 
         return amplitude, elapsed_time
 
-    def plot_circuit(self, circuit_file_path: str):
+    def plot_circuit(self, circuit_file_path: str) -> None:
         """
         Plot the circuit.
 
         Parameters
         ----------
-        circuit: Circuit
-            The circuit to plot.
+        circuit_file_path: str
+            Path to the circuit file in QASM format.
         """
-        
+
         # Load the circuit from the QASM file
         circuit = Circuit.from_openqasm2_file(circuit_file_path)
-        
+
         # Plot the circuit
         circuit.draw()
         plt.show()

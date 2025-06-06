@@ -17,15 +17,17 @@ from modelamp.cwmc.cwmc_solver import CWMCSolver
 
 def compute_amplitude_cwmc(params):
 
-    num_qubits, num_layers, instance, input_path = params
+    circuit_type, num_qubits, num_layers, instance, input_path = params
 
     ganak_path = "./ganak"
     ganak_kwargs = {
         "mode": 2,
-        "delta": 0.05,
+        "delta": 0.2,
     }
 
-    output_dir = "data/cwmc/" + f"q{num_qubits}-l{num_layers}-i{instance}"
+    output_dir = (
+        "data/cwmc/" + f"{circuit_type}/" + f"q{num_qubits}-l{num_layers}-i{instance}"
+    )
     os.makedirs(output_dir, exist_ok=True)
 
     output_file_path = os.path.join(output_dir, "results.json")
@@ -36,17 +38,16 @@ def compute_amplitude_cwmc(params):
     # Load the circuit from the QASM file
     circuit = load(input_path, custom_instructions=qasm2.LEGACY_CUSTOM_INSTRUCTIONS)
 
-    # Generate a random initial and final state
-    initial_state = np.zeros(num_qubits, dtype=int)  # |0>
-    final_state = np.random.choice(a=[0, 1], size=num_qubits)  # |z>
+    # Generate a random final state
+    rng = np.random.default_rng(seed=42)
+    final_state = rng.integers(0, 2, size=num_qubits)  # |z>
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     cwmc_solver = CWMCSolver(
         output_dir=output_dir, ganak_path=ganak_path, ganak_kwargs=ganak_kwargs
     )
-    model_count, time = cwmc_solver.compute_amplitude(
+    model_count, time, num_vars, num_clauses = cwmc_solver.compute_amplitude(
         circuit_file_path=input_path,
-        initial_state=initial_state,
         final_state=final_state,
         verbose=False,
     )
@@ -56,11 +57,15 @@ def compute_amplitude_cwmc(params):
         json.dump(
             {
                 "solver": "cwmc",
+                "circuit-type": circuit_type,
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
                 "instance": instance,
+                "final_state": final_state.tolist(),
                 "model_count": [model_count.real, model_count.imag],
                 "time": time,
+                "cnf_num_vars": num_vars,
+                "cnf_num_clauses": num_clauses,
             },
             f,
             indent=4,
@@ -71,9 +76,10 @@ def compute_amplitude_cwmc(params):
 
 if __name__ == "__main__":
 
-    num_qubits = int(sys.argv[1])
-    num_layers = int(sys.argv[2])
-    instance = int(sys.argv[3])
-    input_path = sys.argv[4]
+    circuit_type = str(sys.argv[1])
+    num_qubits = int(sys.argv[2])
+    num_layers = int(sys.argv[3])
+    instance = int(sys.argv[4])
+    input_path = str(sys.argv[5])
 
-    compute_amplitude_cwmc((num_qubits, num_layers, instance, input_path))
+    compute_amplitude_cwmc((circuit_type, num_qubits, num_layers, instance, input_path))

@@ -6,10 +6,11 @@ Date created: 2025-04-23
 
 import time
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from qiskit.qasm2 import LEGACY_CUSTOM_INSTRUCTIONS, load
 from qiskit.quantum_info import Statevector
-from qiskit.qasm2 import load, LEGACY_CUSTOM_INSTRUCTIONS
+
 
 class SVSolver:
     """
@@ -19,7 +20,9 @@ class SVSolver:
     def __init__(self):
         pass
 
-    def compute_amplitude(self, circuit_file_path, final_state: np.ndarray):
+    def compute_amplitude(
+        self, circuit_file_path: str, final_state: np.ndarray
+    ) -> tuple[complex, float]:
         """
         Compute the amplitude of a bitstring for a quantum circuit using the statevector simulator of qiskit.
 
@@ -35,9 +38,11 @@ class SVSolver:
         amplitude: complex
             The amplitude of the final state.
         """
-        
+
         # Load the circuit from the QASM file
-        circuit = load(circuit_file_path, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS)
+        circuit = load(
+            circuit_file_path, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS
+        )
 
         start_time = time.time()
         psi = Statevector.from_instruction(circuit)
@@ -51,19 +56,21 @@ class SVSolver:
 
         return psi[z_index], elapsed_time
 
-    def plot_circuit(self, circuit_file_path):
+    def plot_circuit(self, circuit_file_path: str) -> None:
         """
         Plot the quantum circuit.
 
         Parameters
         ----------
-        circuit: QuantumCircuit
-            The quantum circuit to plot.
+        circuit_file_path: str
+            The path to the QASM file containing the quantum circuit.
         """
-        
+
         # Load the circuit from the QASM file
-        circuit = load(circuit_file_path, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS)
-        
+        circuit = load(
+            circuit_file_path, custom_instructions=LEGACY_CUSTOM_INSTRUCTIONS
+        )
+
         # Plot the circuit
         circuit.draw(output="mpl")
         plt.show()
