@@ -15,15 +15,16 @@ from modelamp.benchmark.sv_solver import SVSolver
 from modelamp.benchmark.tn_solver import TNSolver
 from modelamp.cwmc import cwmc_solver
 from modelamp.cwmc.cwmc_solver import CWMCSolver
-from modelamp.gen.generate_circuits import generate_brickwork_circuit
+from modelamp.gen.generate_circuits import (generate_brickwork_circuit,
+                                            save_circuit_to_file)
 
 if __name__ == "__main__":
 
     # PARAMETERS
 
-    num_qubits = 5
-    num_layers = 5
-    instance = 0
+    num_qubits = 8
+    num_layers = 4
+    instance = 1
     rng = np.random.default_rng(seed=instance)
 
     verbose = False
@@ -54,8 +55,10 @@ if __name__ == "__main__":
 
     # Generate a random quantum circuit
     circuit = generate_brickwork_circuit(
-        num_qubits=num_qubits, num_layers=num_layers, file_path=qasm_path, rng=rng
+        num_qubits=num_qubits, num_layers=num_layers, rng=rng
     )
+    # Save the circuit to a QASM file
+    save_circuit_to_file(circuit, qasm_path)
 
     # COMPUTE AMPLITUDE WITH CWMC
 
@@ -66,7 +69,7 @@ if __name__ == "__main__":
         initial_state=initial_state,
         final_state=final_state,
         verbose=verbose,
-    )
+    )[:2]
 
     print("Amplitude with CWMC: ", amplitude_cwmc)
     print("Time with CWMC: ", time_cwmc)
