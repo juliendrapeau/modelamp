@@ -1,9 +1,13 @@
 # Folders
 data/
 .vscode/
+figures/
+archives/
+instances/
+tools/
 
 # Files
-
+.gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
