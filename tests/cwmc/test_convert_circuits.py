@@ -17,18 +17,22 @@ def test_simple_circuit():
     num_qubits = 2
     # Create a simple quantum circuit
     qc = QuantumCircuit(num_qubits)
-    qc.h(0)
-    qc.cx(0, 1)
-    qc.x(1)
+    # qc.h(0)
+    # qc.cx(0, 1)
+    # qc.x(1)
+
+    qc.u(0.1, 0.2, 0.3, 0)  # Apply a U3 gate to qubit 0
+    qc.u(0.4, 0.5, 0.6, 1)  # Apply a U3 gate to qubit 1
 
     initial_state = np.array([1, 0])
-    final_state = np.array([1, 1])  # |10> state
+    final_state = np.array([1, 0])  # |10> state
 
     # Convert the circuit to CNF
     converter = CircuitToCNFConverter()
     clauses, weights = converter.convert(
         circuit=qc, initial_state=initial_state, final_state=final_state
     )
+    print(converter.var_mgr.io_map)
     print("Clauses:", clauses)
     print("Weights:", weights)
 
@@ -42,6 +46,7 @@ def test_simple_circuit():
         ganak_solver = GanakSolver(ganak_path="./ganak", ganak_kwargs={"mode": 2})
         count, time = ganak_solver.solve(cnf_file_path=filename)
         print("Model count:", count)
+        print("Probability:", np.abs(count) ** 2)
         print("Time taken:", time)
 
 

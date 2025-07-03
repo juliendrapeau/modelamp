@@ -9,15 +9,13 @@ import os
 import sys
 
 import numpy as np
-from qiskit import qasm2
-from qiskit.qasm2 import load
 
 from modelamp.benchmark.sv_solver import SVSolver
 
 
 def compute_amplitude_sv(params):
 
-    circuit_type, num_qubits, num_layers, instance, input_path = params
+    circuit_type, num_qubits, num_layers, instance, input_path = params[:5]
 
     output_dir = (
         "data/sv/" + f"{circuit_type}/" f"q{num_qubits}-l{num_layers}-i{instance}"

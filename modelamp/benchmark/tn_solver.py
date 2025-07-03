@@ -27,7 +27,7 @@ class TNSolver:
 
     def compute_amplitude(
         self, circuit_file_path: str, final_state: np.ndarray
-    ) -> tuple[complex, float]:
+    ) -> tuple[(complex | dict[str, complex]), float]:
         """
         Compute the amplitude of a bitstring for a quantum circuit using tensor network contraction with quimb
 

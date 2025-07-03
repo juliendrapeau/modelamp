@@ -1,5 +1,4 @@
 from itertools import product
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from qiskit import QuantumCircuit
@@ -13,13 +12,13 @@ class VariableManager:
     ----------
     var_counter: int
         Counter for allocating unique CNF variables, starting from 1 as per DIMACS CNF standard.
-    io_map: Dict[int, int]
+    io_map: dict[int, int]
         Maps qubit indices to their corresponding output CNF variable indices. This allows for easy retrieval of output CNF variables associated with specific qubits.
     """
 
     def __init__(self):
         self.var_counter = 1  # DIMACS CNF variable index starts at 1
-        self.io_map: Dict[int, int] = (
+        self.io_map: dict[int, int] = (
             {}
         )  # Maps qubit index -> current output CNF variable
 
@@ -30,7 +29,7 @@ class VariableManager:
         self.var_counter = 1
         self.io_map.clear()
 
-    def allocate_unique_vars(self, n: int) -> List[int]:
+    def allocate_unique_vars(self, n: int) -> list[int]:
         """
         Allocate a list of n unique CNF variables, starting from the current variable counter.
 
@@ -41,38 +40,38 @@ class VariableManager:
 
         Returns
         -------
-        vars: List[int]
+        vars: list[int]
             A list of n unique CNF variable indices, starting from the current variable counter.
         """
         vars = list(range(self.var_counter, self.var_counter + n))
         self.var_counter += n
         return vars
 
-    def update_io_map(self, qubit_indices: List[int], variables: List[int]):
+    def update_io_map(self, qubit_indices: list[int], variables: list[int]):
         """
         Update the I/O map with the given qubit indices and their corresponding CNF variables.
 
         Parameters
         ----------
-        qubit_indices: List[int]
+        qubit_indices: list[int]
             The indices of the qubits to map.
-        variables: List[int]
+        variables: list[int]
             The CNF variables to associate with the qubit indices.
         """
         for q, v in zip(qubit_indices, variables):
             self.io_map[q] = v
 
-    def get_output_vars_from_map(self, qubit_indices: List[int]) -> List[int]:
+    def get_output_vars(self, qubit_indices: list[int]) -> list[int]:
         """
         Retrieve the CNF variables associated with the given qubits.
 
         Parameters
         ----------
-        qubit_indices: List[int]
+        qubit_indices: list[int]
             The indices of the qubits for which to retrieve the CNF variables.
         Returns
         -------
-        List[int]
+        list[int]
             A list of CNF variable indices corresponding to the provided qubit indices.
         """
         try:
@@ -88,16 +87,26 @@ class CircuitToCNFConverter:
     Attributes
     ----------
     var_mgr: VariableManager
-    clauses: List[List[int]]
-        List of CNF clauses, where each clause is a list of literals (CNF variables).
-    weights: Dict[int, complex]
+    clauses: list[list[int]]
+        list of CNF clauses, where each clause is a list of literals (CNF variables).
+    weights: dict[int, complex]
         Dictionary mapping CNF variable literals to their complex weights, representing the amplitude contributions of each clause.
     """
 
-    def __init__(self):
+    def __init__(self, encoding_method: str = "valid-paths"):
+
         self.var_mgr = VariableManager()
-        self.clauses: List[List[int]] = []
-        self.weights: Dict[int, complex] = {}
+        self.clauses: list[list[int]] = []
+        self.weights: dict[int, complex] = {}
+        self.num_qubits: int = 0
+
+        self.encoding_methods = ["valid-paths", "all-paths"]
+        self.encoding_method = encoding_method
+
+        if encoding_method not in self.encoding_methods:
+            raise ValueError(
+                f"Unknown encoding method: {encoding_method}. Use 'valid-paths' or 'all-paths'."
+            )
 
     @property
     def num_vars(self) -> int:
@@ -120,8 +129,9 @@ class CircuitToCNFConverter:
         self.var_mgr.reset()
         self.clauses.clear()
         self.weights.clear()
+        self.num_qubits = 0
 
-    def _add_basis_state(self, state: np.ndarray, variables: List[int]):
+    def _add_basis_state(self, state: np.ndarray, variables: list[int]):
         """
         Encode a basis state |x⟩ or ⟨y| into unit CNF clauses: [±v1], [±v2], ...
         Each qubit is set to True (v) or False (-v) based on the bit value.
@@ -132,7 +142,7 @@ class CircuitToCNFConverter:
 
         self.clauses.extend([[v if bit else -v] for bit, v in zip(state, variables)])
 
-    def _add_general_unitary(self, unitary: np.ndarray, qubit_indices: List[int]):
+    def _add_general_unitary(self, unitary: np.ndarray, qubit_indices: list[int]):
         """
         Encode a general unitary matrix and convert it into CNF clauses. For a k-qubit gate, this method will create 2^(2k) clauses, each representing a possible input-output mapping of the gate. The method constructs clauses in the form:
             [-internal_var, ±x1, ±x2, ..., ±x_{2k}]
@@ -144,7 +154,7 @@ class CircuitToCNFConverter:
         ----------
         unitary: np.ndarray
             The unitary matrix to encode, expected to be of shape (2^k, 2^k) for a k-qubit gate.
-        qubit_indices: List[int]
+        qubit_indices: list[int]
             The indices of the qubits that this unitary acts on. The length of this list determines the number of qubits (k) and thus the shape of the unitary matrix.
         """
 
@@ -156,7 +166,7 @@ class CircuitToCNFConverter:
             )
 
         # Get input variables for the unitary gate
-        input_vars = self.var_mgr.get_output_vars_from_map(qubit_indices)
+        input_vars = self.var_mgr.get_output_vars(qubit_indices)
 
         # Allocate unique variables for output and internal states
         output_vars = self.var_mgr.allocate_unique_vars(k)
@@ -170,21 +180,36 @@ class CircuitToCNFConverter:
         # Reshape unitary into a 2k-dimensional tensor
         tensor = unitary.reshape([2] * (2 * k))
 
-        # Iterate over all possible input combinations (2^k for inputs, 2^k for outputs)
-        for bits, internal in zip(product([0, 1], repeat=2 * k), internal_vars):
-            literals = [-v if b else v for b, v in zip(bits, io_vars)]
+        if self.encoding_method == "all-paths":
+            # Iterate over all possible input combinations (2^k for inputs, 2^k for outputs)
+            for bits, internal in zip(product([0, 1], repeat=2 * k), internal_vars):
+                neg_literals = [-v if b else v for b, v in zip(bits, io_vars)]
 
-            self.clauses.append([-internal] + literals)
-            # Store weight (note reversed bit order for qiskit indexing)
-            self.weights[-internal] = tensor[tuple(bits[::-1])]
+                self.clauses.append([-internal] + neg_literals)
+                # Store weight (note reversed bit order for qiskit indexing)
+                self.weights[-internal] = tensor[tuple(bits[::-1])]
 
-    def _add_cnot_gate(self, qubit_indices: List[int]):
+        elif self.encoding_method == "valid-paths":
+
+            # Iterate over all possible input combinations (2^k for inputs, 2^k for outputs)
+            for bits, internal in zip(product([0, 1], repeat=2 * k), internal_vars):
+                neg_literals = [-v if b else v for b, v in zip(bits, io_vars)]
+
+                self.clauses.append([internal] + neg_literals)
+
+                for neg_literal in neg_literals:
+                    self.clauses.append([-internal] + [-neg_literal])
+
+                # Store weight (note reversed bit order for qiskit indexing)
+                self.weights[internal] = tensor[tuple(bits[::-1])]
+
+    def _add_cnot_gate(self, qubit_indices: list[int]):
         """
         Encode a CNOT gate as CNF clauses.
 
         Parameters:
         ----------
-        qubit_indices: List[int]
+        qubit_indices: list[int]
             The indices of the control and target qubits for the CNOT gate.
         """
 
@@ -194,30 +219,46 @@ class CircuitToCNFConverter:
             )
 
         # Allocate variables for control and target qubits
-        input_vars = self.var_mgr.get_output_vars_from_map(qubit_indices)
+        input_vars = self.var_mgr.get_output_vars(qubit_indices)
 
-        output_vars = self.var_mgr.allocate_unique_vars(2)
-        internal_var = self.var_mgr.allocate_unique_vars(1)
+        if self.encoding_method == "all-paths":
 
-        # Update variable manager with new output variables
-        self.var_mgr.update_io_map(qubit_indices, output_vars)
+            output_vars = self.var_mgr.allocate_unique_vars(2)
+            internal_var = self.var_mgr.allocate_unique_vars(1)
 
-        io_vars = input_vars + output_vars
+            # Update variable manager with new output variables
+            self.var_mgr.update_io_map(qubit_indices, output_vars)
 
-        # Set the tensor values for CNOT operation
-        bits_list = list(product([0, 1], repeat=4))
-        bits_list.remove((0, 0, 0, 0))
-        bits_list.remove((0, 1, 0, 1))
-        bits_list.remove((1, 0, 1, 1))
-        bits_list.remove((1, 1, 1, 0))
+            io_vars = input_vars + output_vars
 
-        self.weights[-internal_var[0]] = complex(0)
+            # Set the tensor values for CNOT operation
+            bits_list = list(product([0, 1], repeat=4))
+            bits_list.remove((0, 0, 0, 0))
+            bits_list.remove((0, 1, 0, 1))
+            bits_list.remove((1, 0, 1, 1))
+            bits_list.remove((1, 1, 1, 0))
 
-        # Iterate over all possible input combinations
-        for bits in bits_list:
-            literals = [-v if b else v for b, v in zip(bits, io_vars)]
+            self.weights[-internal_var[0]] = complex(0)
 
-            self.clauses.append([-internal_var[0]] + literals)
+            # Iterate over all possible input combinations
+            for bits in bits_list:
+                literals = [-v if b else v for b, v in zip(bits, io_vars)]
+
+                self.clauses.append([-internal_var[0]] + literals)
+
+        elif self.encoding_method == "valid-paths":
+
+            output_vars = self.var_mgr.allocate_unique_vars(2)
+
+            # Update variable manager with new output variables
+            self.var_mgr.update_io_map(qubit_indices, output_vars)
+
+            self.clauses.append([-input_vars[0], -input_vars[1], -output_vars[1]])
+            self.clauses.append([input_vars[0], input_vars[1], -output_vars[1]])
+            self.clauses.append([-input_vars[0], input_vars[1], output_vars[1]])
+            self.clauses.append([input_vars[0], -input_vars[1], output_vars[1]])
+            self.clauses.append([input_vars[0], -output_vars[0]])
+            self.clauses.append([-input_vars[0], output_vars[0]])
 
     def _dispatch_gate(self, instr):
         """
@@ -233,8 +274,13 @@ class CircuitToCNFConverter:
         qubit_indices = [q._index for q in instr.qubits]
         matrix = instr.matrix
 
-        if name == "cx":
-            self._add_cnot_gate(qubit_indices)
+        gates = {
+            "cx": self._add_cnot_gate,
+            "cnot": self._add_cnot_gate,
+        }
+
+        if name in gates:
+            gates[name](qubit_indices)
         else:
             self._add_general_unitary(matrix, qubit_indices)
 
@@ -243,7 +289,7 @@ class CircuitToCNFConverter:
         circuit: QuantumCircuit,
         initial_state: np.ndarray,
         final_state: np.ndarray,
-    ) -> Tuple[List[List[int]], Dict[int, complex]]:
+    ) -> tuple[list[list[int]], dict[int, complex]]:
         """
         Convert a Qiskit quantum circuit into CNF clauses with complex weights.
         This method processes the circuit's gates and encodes the initial and final states into CNF format, suitable for solving with PWMCC solvers.
@@ -259,15 +305,17 @@ class CircuitToCNFConverter:
 
         Returns:
         -------
-        Tuple[List[List[int]], Dict[int, complex]]
+        tuple[list[list[int]], dict[int, complex]]
             A tuple containing:
-            - clauses: List of CNF clauses, where each clause is a list of literals.
+            - clauses: list of CNF clauses, where each clause is a list of literals.
             - weigths: Dictionary mapping CNF variable literals to their complex weights.
         """
 
         self._reset()
 
         n = circuit.num_qubits
+        self.num_qubits = n
+
         if len(initial_state) != n or len(final_state) != n:
             raise ValueError("Initial and final states must match circuit width.")
 
@@ -284,14 +332,14 @@ class CircuitToCNFConverter:
             self._dispatch_gate(instr)
 
         # Get output variables for final state
-        output_vars = self.var_mgr.get_output_vars_from_map(list(range(n)))
+        output_vars = self.var_mgr.get_output_vars(list(range(n)))
 
         # Add clauses for the final state
         self._add_basis_state(final_state, output_vars)
 
         return self.clauses, self.weights
 
-    def export_dimacs(self, filename: Optional[str] = None) -> str:
+    def export_dimacs(self, filename: str | None = None) -> str:
         """
         Export the CNF clauses and weights to a DIMACS format string or save to a file.
 
@@ -320,7 +368,7 @@ class CircuitToCNFConverter:
                 )
             r, i = w.real, w.imag
             lines.append(f"c p weight {lit} {r} {i} 0")
-            lines.append(f"c p weight {-lit} {1 - r} {-i} 0")
+            lines.append(f"c p weight {-lit} {1} {0} 0")
 
         for clause in self.clauses:
             lines.append(" ".join(map(str, clause)) + " 0")

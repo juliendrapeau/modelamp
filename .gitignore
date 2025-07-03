@@ -7,6 +7,9 @@ quokka/
 test/
 instances/
 tools/
+.snakemake/
+data-good/
+instances-good/
 
 # Files
 .gitignore

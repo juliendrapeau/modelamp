@@ -36,7 +36,7 @@ plt.show()
 # Figure 2: Number of Qubits vs tiem for different circuit types
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-filtered_df = df[(df["solver"] == "cwmc") & (df["num_qubits"] <= 8)]
+filtered_df = df[(df["solver"] == "cwmc") & (df["num_qubits"] <= 10)]
 
 sns.lineplot(
     ax=axes[0],

@@ -9,15 +9,13 @@ import os
 import sys
 
 import numpy as np
-from qiskit import qasm2
-from qiskit.qasm2 import load
 
 from modelamp.benchmark.tn_solver import TNSolver
 
 
 def compute_amplitude_tn(params):
 
-    circuit_type, num_qubits, num_layers, instance, input_path = params
+    circuit_type, num_qubits, num_layers, instance, input_path = params[:5]
 
     output_dir = (
         "data/tn/" + f"{circuit_type}/" + f"q{num_qubits}-l{num_layers}-i{instance}"
