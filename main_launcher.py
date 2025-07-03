@@ -20,12 +20,15 @@ from main_tn import compute_amplitude_tn
 
 if __name__ == "__main__":
 
-    simulator = "sv"  # Choose from 'cwmc', 'sv', or 'tn'
-    circuit_type = (
-        "brickwork"  # Options: "brickwork", "random_u3", "transpiled_brickwork"
-    )
+    simulator = "cwmc"  # Choose from 'cwmc', 'sv', or 'tn'
+    circuit_type = "brickwork"  # Options: "brickwork", "random_u3"
+    transpiled = False  # Set to True if you used transpiled circuits
+    encoding_method = "valid-paths"  # Options: "all-paths", "valid-path"
 
-    input_dir = os.path.join(f"instances/{circuit_type}/")
+    if transpiled:
+        input_dir = os.path.join(f"instances/{circuit_type}-transpiled/")
+    else:
+        input_dir = os.path.join(f"instances/{circuit_type}/")
 
     parameters_space = {
         "num_qubits": range(4, 31, 2),
@@ -48,6 +51,7 @@ if __name__ == "__main__":
                 num_layers,
                 instance,
                 str(dir_prefix) + "/circuit.qasm",
+                encoding_method,  # Only used for CWMC
             )
         )
 

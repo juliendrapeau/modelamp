@@ -9,15 +9,13 @@ import os
 import sys
 
 import numpy as np
-from qiskit import qasm2
-from qiskit.qasm2 import load
 
 from modelamp.cwmc.cwmc_solver import CWMCSolver
 
 
 def compute_amplitude_cwmc(params):
 
-    circuit_type, num_qubits, num_layers, instance, input_path = params
+    circuit_type, num_qubits, num_layers, instance, input_path, encoding_method = params
 
     ganak_path = "./ganak"
     ganak_kwargs = {
@@ -26,7 +24,10 @@ def compute_amplitude_cwmc(params):
     }
 
     output_dir = (
-        "data/cwmc/" + f"{circuit_type}/" + f"q{num_qubits}-l{num_layers}-i{instance}"
+        "data/cwmc/new-new-"
+        + f"{circuit_type}"
+        + "-circuits/"
+        + f"q{num_qubits}-l{num_layers}-i{instance}"
     )
     os.makedirs(output_dir, exist_ok=True)
 
@@ -35,16 +36,13 @@ def compute_amplitude_cwmc(params):
         print(f"Results already exist for {output_file_path}. Skipping computation.")
         return
 
-    # Load the circuit from the QASM file
-    circuit = load(input_path, custom_instructions=qasm2.LEGACY_CUSTOM_INSTRUCTIONS)
-
     # Generate a random final state
     rng = np.random.default_rng(seed=42)
     final_state = rng.integers(0, 2, size=num_qubits)  # |z>
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     cwmc_solver = CWMCSolver(
-        output_dir=output_dir, ganak_path=ganak_path, ganak_kwargs=ganak_kwargs
+        output_dir=output_dir, encoding_method=encoding_method, ganak_path=ganak_path, ganak_kwargs=ganak_kwargs
     )
     model_count, time, num_vars, num_clauses = cwmc_solver.compute_amplitude(
         circuit_file_path=input_path,
@@ -57,6 +55,7 @@ def compute_amplitude_cwmc(params):
         json.dump(
             {
                 "solver": "cwmc",
+                "encoding_method": encoding_method,
                 "circuit-type": circuit_type,
                 "num_qubits": num_qubits,
                 "num_layers": num_layers,
@@ -81,5 +80,6 @@ if __name__ == "__main__":
     num_layers = int(sys.argv[3])
     instance = int(sys.argv[4])
     input_path = str(sys.argv[5])
+    encoding_method = str(sys.argv[6])
 
-    compute_amplitude_cwmc((circuit_type, num_qubits, num_layers, instance, input_path))
+    compute_amplitude_cwmc((circuit_type, num_qubits, num_layers, instance, input_path, encoding_method))

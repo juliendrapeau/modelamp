@@ -44,3 +44,8 @@ def test_bell_state():
     assert np.allclose(
         found_state, expected_state
     ), "The amplitude for the Bell state does not match."
+
+
+def test_recursive():
+
+    pass
