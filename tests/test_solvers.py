@@ -1,5 +1,5 @@
 """
-Compare with known circuits
+Compare with known circuits.
 """
 
 import tempfile
@@ -53,7 +53,7 @@ def test_solvers_random_circuits(num_qubits, depth):
 @mark.parametrize("num_qubits, num_layers", np.random.randint(4, 8, size=[5, 2]))
 def test_solvers_brickwork_circuit(num_qubits, num_layers):
     """
-    Test the solver with a brickwork circuit.
+    Test the solver with random brickwork circuits.
     """
     from modelamp.gen.generate_circuits import (
         generate_brickwork_circuit,
@@ -62,7 +62,8 @@ def test_solvers_brickwork_circuit(num_qubits, num_layers):
 
     sv_solver = SVSolver()
     tn_solver = TNSolver()
-    cwmc_solver = CWMCSolver()
+    cwmc_solver_all_paths = CWMCSolver(encoding_method="all-paths")
+    cwmc_solver_valid_paths = CWMCSolver(encoding_method="valid-paths")
 
     initial_state = np.zeros(num_qubits, dtype=int)
     final_state = np.random.choice(a=[0, 1], size=num_qubits)
@@ -75,15 +76,19 @@ def test_solvers_brickwork_circuit(num_qubits, num_layers):
 
     amplitude_sv = sv_solver.compute_amplitude(temp_file.name, final_state)[0]
     amplitude_tn = tn_solver.compute_amplitude(temp_file.name, final_state)[0]
-    amplitude_cwmc = cwmc_solver.compute_amplitude(
+    amplitude_cwmc_all_paths = cwmc_solver_all_paths.compute_amplitude(
         temp_file.name, final_state, initial_state=initial_state
     )[0]
+    amplitude_cwmc_valid_paths = cwmc_solver_valid_paths.compute_amplitude(
+        temp_file.name, final_state, initial_state=initial_state)[0]
 
     assert np.isclose(
-        amplitude_sv, amplitude_cwmc, atol=1e-4
+        amplitude_cwmc_valid_paths, amplitude_cwmc_all_paths, atol=1e-4), "The amplitudes from CWMCSolver with valid paths and all paths do not match."
+    assert np.isclose(
+        amplitude_sv, amplitude_cwmc_valid_paths, atol=1e-4
     ), "The amplitudes from SVSolver and CWMCSolver do not match."
     assert np.isclose(
-        amplitude_tn, amplitude_cwmc, atol=1e-4
+        amplitude_tn, amplitude_cwmc_valid_paths, atol=1e-4
     ), "The amplitudes from TNSolver and CWMCSolver do not match."
     assert np.isclose(
         amplitude_sv, amplitude_tn, atol=1e-4
@@ -93,7 +98,7 @@ def test_solvers_brickwork_circuit(num_qubits, num_layers):
 @mark.parametrize("num_qubits, num_layers", np.random.randint(4, 8, size=[5, 2]))
 def test_solvers_transpiled_brickwork_circuit(num_qubits, num_layers):
     """
-    Test the solver with a brickwork circuit.
+    Test the solver with random transpiled brickwork circuits.
     """
     from modelamp.gen.generate_circuits import (
         generate_brickwork_circuit,

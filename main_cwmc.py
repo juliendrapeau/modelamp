@@ -24,7 +24,7 @@ def compute_amplitude_cwmc(params):
     }
 
     output_dir = (
-        "data/cwmc/new-new-"
+        "data/cwmc/"
         + f"{circuit_type}"
         + "-circuits/"
         + f"q{num_qubits}-l{num_layers}-i{instance}"
