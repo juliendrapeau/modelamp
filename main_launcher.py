@@ -21,20 +21,21 @@ from main_tn import compute_amplitude_tn
 if __name__ == "__main__":
 
     simulator = "cwmc"  # Choose from 'cwmc', 'sv', or 'tn'
-    circuit_type = "brickwork"  # Options: "brickwork", "random_u3"
+    circuit_type = "brickwork"
     transpiled = False  # Set to True if you used transpiled circuits
     encoding_method = "valid-paths"  # Options: "all-paths", "valid-path"
 
+    parameters_space = {
+        "num_qubits": range(4, 21, 2),
+        "num_layers": range(10, 11, 1),
+        "num_instances": range(1, 11),
+    }
+    
     if transpiled:
         input_dir = os.path.join(f"instances/{circuit_type}-transpiled/")
     else:
         input_dir = os.path.join(f"instances/{circuit_type}/")
 
-    parameters_space = {
-        "num_qubits": range(4, 31, 2),
-        "num_layers": range(10, 11, 1),
-        "num_instances": range(1, 11),
-    }
 
     parameters_list = []
     for num_qubits, num_layers, instance in itertools.product(
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Invalid simulator type. Choose 'cwmc' or 'sv'.")
 
-    with Pool(processes=4) as pool:
+    with Pool(processes=1) as pool:
         list(
             tqdm.tqdm(
                 pool.imap(compute_amplitude, parameters_list),

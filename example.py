@@ -7,15 +7,15 @@ Date created: 2025-04-11
 import json
 import os
 
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
+# Uncomment to compare the performance of different solvers without parallel execution
+# os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
+# os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import tempfile
 
 import numpy as np
 from qiskit.quantum_info import Statevector
-from quimb import num
 
 from modelamp.benchmark.sv_solver import SVSolver
 from modelamp.benchmark.tn_solver import TNSolver
@@ -116,22 +116,22 @@ if __name__ == "__main__":
         print("Statevector: ")
         print(Statevector.from_instruction(circuit))
 
-    # # Save results
-    # with open(os.path.join(output_dir, "results.json"), "w") as f:
-    #     json.dump(
-    #         {
-    #             "num_qubits": num_qubits,
-    #             "num_layers": num_layers,
-    #             "instance": instance,
-    #             "initial_state": initial_state.tolist(),
-    #             "final_state": final_state.tolist(),
-    #             "amplitude_cwmc": [amplitude_cwmc.real, amplitude_cwmc.imag],
-    #             "amplitude_sv": [amplitude_sv.real, amplitude_sv.imag] if amplitude_sv is not None else None,
-    #             "amplitude_tn": [amplitude_tn.real, amplitude_tn.imag],
-    #             "time_cwmc": time_cwmc,
-    #             "time_sv": time_sv,
-    #             "time_tn": time_tn,
-    #             "circuit_file_path": qasm_path,
-    #         },
-    #         f,
-    #     )
+    # Save results
+    with open(os.path.join(output_dir, "results.json"), "w") as f:
+        json.dump(
+            {
+                "num_qubits": num_qubits,
+                "num_layers": num_layers,
+                "instance": instance,
+                "initial_state": initial_state.tolist(),
+                "final_state": final_state.tolist(),
+                "amplitude_cwmc": [amplitude_cwmc.real, amplitude_cwmc.imag],
+                "amplitude_sv": [amplitude_sv.real, amplitude_sv.imag] if amplitude_sv is not None else None,
+                "amplitude_tn": [amplitude_tn.real, amplitude_tn.imag],
+                "time_cwmc": time_cwmc,
+                "time_sv": time_sv,
+                "time_tn": time_tn,
+                "circuit_file_path": qasm_path,
+            },
+            f,
+        )

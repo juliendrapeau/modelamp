@@ -11,7 +11,6 @@ from multiprocessing import Pool
 
 import numpy as np
 import tqdm
-from qiskit import transpile
 
 from modelamp.gen.generate_circuits import generate_circuit, save_circuit_to_file
 
@@ -33,18 +32,12 @@ def generate_circuits(params):
 
     rng = np.random.default_rng(seed=instance)
 
-    if circuit_type == "k-qubit-brickwork":
-        k = 3
-    else:
-        k = None
-
     circuit = generate_circuit(
         method=circuit_type,
         num_qubits=num_qubits,
         num_layers=num_layers,
         rng=rng,
         transpile_to=transpile_to,
-        k=k,
     )
 
     save_circuit_to_file(circuit, file_path)  # type: ignore
@@ -66,18 +59,18 @@ def generate_circuits(params):
 if __name__ == "__main__":
 
     circuit_type = "brickwork"  # Options: "brickwork", "random-u3"
-    transpile_to = ["cx", "u3"]  # Options: None, ["cx", "u3"]
+    transpile_to = None  # Options: None, ["cx", "u3"]
+
+    parameters_space = {
+        "num_qubits": range(4, 21, 2),
+        "num_layers": range(10, 11, 1),
+        "num_instances": range(1, 11),
+    }
 
     if transpile_to is None:
         output_dir = f"instances/{circuit_type}/"
     else:
         output_dir = f"instances/{circuit_type}-transpiled/"
-
-    parameters_space = {
-        "num_qubits": range(4, 31, 2),
-        "num_layers": range(10, 11, 1),
-        "num_instances": range(1, 11),
-    }
 
     output_dir_path = os.path.join(output_dir)
     os.makedirs(output_dir_path, exist_ok=True)
@@ -102,7 +95,7 @@ if __name__ == "__main__":
             )
         )
 
-    with Pool(8) as pool:
+    with Pool(1) as pool:
         list(
             tqdm.tqdm(
                 pool.imap(generate_circuits, parameters_list),
