@@ -1,6 +1,6 @@
 # modelamp
 
-In this repository, we encode a quantum circuit as a weighted model counting instance. Specifically, if $C$ represents a quantum circuit on $n$-qubits and $z \in \left\{0,1\right\}^n$, then we use the model counter [Ganak](https://github.com/meelgroup/ganak) to compute $\braket{z|C|0}$.
+In this repository, we encode a quantum circuit as a weighted model counting instance. Specifically, if $C$ represents a quantum circuit on $n$-qubits and $z \in \left\\{0,1\right\\}^n$, then we use the model counter [Ganak](https://github.com/meelgroup/ganak) to compute $\braket{z|C|0}$.
 
 ## Installation
 
