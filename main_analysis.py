@@ -1,4 +1,4 @@
-""" 
+"""
 Plotting functions for analyzing quantum circuit performance.
 """
 
@@ -26,9 +26,13 @@ for file in input_files:
 df = pd.DataFrame(rows)
 
 # Create a combined label for hue
-df['solver_label'] = df.apply(
-    lambda row: f"{row['solver']} ({row['encoding-method']})" if row['solver'] == 'cwmc' else row['solver'],
-    axis=1
+df["solver_label"] = df.apply(
+    lambda row: (
+        f"{row['solver']} ({row['encoding-method']})"
+        if row["solver"] == "cwmc"
+        else row["solver"]
+    ),
+    axis=1,
 )
 
 # Figure 1
@@ -41,7 +45,7 @@ g = sns.relplot(
     kind="line",
     markers=True,
     errorbar="se",
-    style="brickwork-ratio"
+    style="brickwork-ratio",
 ).set(yscale="log", xscale="log")
 plt.grid()
 g.legend.set_title("r")
@@ -64,8 +68,8 @@ g = sns.relplot(
     markers=True,
     errorbar="se",
     style="solver_label",
-    palette=[palette[1], palette[2], palette[3]]
-).set(yscale="log", xscale="log") 
+    palette=[palette[1], palette[2], palette[3]],
+).set(yscale="log", xscale="log")
 plt.grid()
 g.set_axis_labels("Number of qubits", "Time (s)")
 g.legend.set_title("Method")
@@ -78,7 +82,9 @@ plt.show()
 # Figure 3
 
 g = sns.relplot(
-    data=df[(df["circuit-type"] == "brickwork") & (df["num-qubits"] == df["num-layers"])],
+    data=df[
+        (df["circuit-type"] == "brickwork") & (df["num-qubits"] == df["num-layers"])
+    ],
     x="num-qubits",
     y="time",
     hue="solver_label",
@@ -96,5 +102,5 @@ g.legend.texts[2].set_text("Statevector")
 g.legend.texts[3].set_text("Tensor networks")
 g.ax.xaxis.set_major_locator(MaxNLocator(integer=True, steps=[2, 4]))
 plt.grid()
-plt.savefig("figures/solvers.pdf", bbox_inches='tight')
+plt.savefig("figures/solvers.pdf", bbox_inches="tight")
 plt.show()

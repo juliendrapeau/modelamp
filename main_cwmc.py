@@ -42,7 +42,10 @@ def compute_amplitude_cwmc(params):
 
     # Compute the amplitude using Complex Weighted Model Counting (CWMC)
     cwmc_solver = CWMCSolver(
-        output_dir=output_dir, encoding_method=encoding_method, ganak_path=ganak_path, ganak_kwargs=ganak_kwargs
+        output_dir=output_dir,
+        encoding_method=encoding_method,
+        ganak_path=ganak_path,
+        ganak_kwargs=ganak_kwargs,
     )
     model_count, time, num_vars, num_clauses = cwmc_solver.compute_amplitude(
         circuit_file_path=input_path,
@@ -82,4 +85,6 @@ if __name__ == "__main__":
     input_path = str(sys.argv[5])
     encoding_method = str(sys.argv[6])
 
-    compute_amplitude_cwmc((circuit_type, num_qubits, num_layers, instance, input_path, encoding_method))
+    compute_amplitude_cwmc(
+        (circuit_type, num_qubits, num_layers, instance, input_path, encoding_method)
+    )

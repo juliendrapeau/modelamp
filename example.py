@@ -6,12 +6,6 @@ Date created: 2025-04-11
 
 import json
 import os
-
-# Uncomment to compare the performance of different solvers without parallel execution
-# os.environ["OMP_NUM_THREADS"] = "1"
-# os.environ["MKL_NUM_THREADS"] = "1"
-# os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
 import tempfile
 
 import numpy as np
@@ -21,7 +15,16 @@ from modelamp.benchmark.sv_solver import SVSolver
 from modelamp.benchmark.tn_solver import TNSolver
 from modelamp.cwmc import cwmc_solver
 from modelamp.cwmc.cwmc_solver import CWMCSolver
-from modelamp.gen.generate_circuits import generate_circuit, save_circuit_to_file
+from modelamp.gen.generate_circuits import (generate_circuit,
+                                            save_circuit_to_file)
+
+# Uncomment to compare the performance of different solvers without parallel execution
+# os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
+# os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+
+
 
 if __name__ == "__main__":
 

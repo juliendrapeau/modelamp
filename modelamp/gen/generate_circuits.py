@@ -10,6 +10,7 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.qasm2 import dump
 from qiskit.quantum_info import random_unitary
 
+
 def generate_circuit(
     method: str,
     num_qubits: int,
@@ -120,14 +121,16 @@ def generate_brickwork_circuit(
 
     return circuit
 
+
 def generate_semi_brickwork_circuit(
-    num_qubits: int, num_layers: int, rng=np.random.default_rng(), r=0.5, **kwargs) -> QuantumCircuit:
+    num_qubits: int, num_layers: int, rng=np.random.default_rng(), r=0.5, **kwargs
+) -> QuantumCircuit:
     """
     Generate a semi-brickwork circuit with a specified fraction of two-qubit gates replaced by two single-qubit gates.
     """
 
     circuit = QuantumCircuit(num_qubits)
-    
+
     list_unitaries = []
     for _ in range(num_layers):
 
@@ -140,21 +143,27 @@ def generate_semi_brickwork_circuit(
         for qubit in range(1, num_qubits - 1, 2):
             unitary = random_unitary(dims=4, seed=rng.integers(0, 2**32 - 1))
             list_unitaries.append((unitary, [qubit, qubit + 1]))
-    
+
     # Randomly select unique indices to replace
-    replace_indices = sorted(rng.choice(len(list_unitaries), size=int(r*len(list_unitaries)), replace=False), reverse=True)
+    replace_indices = sorted(
+        rng.choice(
+            len(list_unitaries), size=int(r * len(list_unitaries)), replace=False
+        ),
+        reverse=True,
+    )
     for idx in replace_indices:
         u3_1 = random_unitary(dims=2, seed=rng.integers(0, 2**32 - 1))
         u3_2 = random_unitary(dims=2, seed=rng.integers(0, 2**32 - 1))
         unitary, qubits = list_unitaries[idx]
         # Replace the two-qubit unitary with two single-qubit unitaries on the same qubits
-        list_unitaries[idx:idx+1] = [(u3_1, [qubits[0]]), (u3_2, [qubits[1]])]
+        list_unitaries[idx : idx + 1] = [(u3_1, [qubits[0]]), (u3_2, [qubits[1]])]
 
     # Append all gates to the circuit
     for unitary, qubits in list_unitaries:
         circuit.append(unitary, qubits)
-    
+
     return circuit
+
 
 def generate_uncomputed_brickwork_circuit(
     num_qubits: int, num_layers: int, rng=np.random.default_rng(), **kwargs
@@ -199,6 +208,7 @@ def generate_uncomputed_brickwork_circuit(
 
     return circuit
 
+
 def generate_cnot_brickwork_circuit(
     num_qubits: int, num_layers: int, rng=np.random.default_rng(), **kwargs
 ) -> QuantumCircuit:
@@ -221,7 +231,7 @@ def generate_cnot_brickwork_circuit(
     """
 
     circuit = QuantumCircuit(num_qubits)
-        
+
     for _ in range(num_layers):
 
         # Apply two-qubit gates starting from qubit 0
@@ -230,16 +240,17 @@ def generate_cnot_brickwork_circuit(
 
         # Apply two-qubit gates starting from qubit 1
         for qubit in range(1, num_qubits - 1, 2):
-            circuit.cx(qubit+1, qubit)
+            circuit.cx(qubit + 1, qubit)
 
     return circuit
+
 
 def generate_swap_brickwork_circuit(
     num_qubits: int, num_layers: int, rng=np.random.default_rng(), **kwargs
 ) -> QuantumCircuit:
     """
     Generate a random SWAP brickwork circuit.
-    
+
     Parameters
     ----------
     num_qubits: int
@@ -254,7 +265,7 @@ def generate_swap_brickwork_circuit(
     circuit: QuantumCircuit
         The generated quantum circuit.
     """
-    
+
     circuit = QuantumCircuit(num_qubits)
 
     for _ in range(num_layers):
@@ -268,6 +279,7 @@ def generate_swap_brickwork_circuit(
             circuit.swap(qubit + 1, qubit)
 
     return circuit
+
 
 def generate_random_u3_circuit(
     num_qubits: int, num_layers: int, rng=np.random.default_rng(), **kwargs
@@ -299,6 +311,7 @@ def generate_random_u3_circuit(
             circuit.append(unitary, [qubit])
 
     return circuit
+
 
 def generate_random_unitaries_circuit(
     num_qubits: int, num_layers: int, rng=np.random.default_rng(), k: int = 2, **kwargs
@@ -332,6 +345,7 @@ def generate_random_unitaries_circuit(
             circuit.append(unitary, [qubit, qubit + 1])
 
     return circuit
+
 
 def generate_k_brickwork_circuit(
     num_qubits: int, num_layers: int, k: int, rng=np.random.default_rng()
@@ -379,6 +393,7 @@ def generate_k_brickwork_circuit(
 
     return circuit
 
+
 def transpile_circuit(
     circuit: QuantumCircuit, basic_gates: list = ["cx", "u3"]
 ) -> QuantumCircuit:
@@ -401,6 +416,7 @@ def transpile_circuit(
     )
 
     return transpiled_circuit
+
 
 def save_circuit_to_file(circuit: QuantumCircuit, file_path: PathLike[str]) -> None:
     """

@@ -4,13 +4,11 @@ Purpose: Launch multiple processes to compute the amplitude of a bitstring for a
 Date created: 2025-04-23
 """
 
-import os
-
 import itertools
+import os
 from multiprocessing import Pool
 
 import tqdm
-
 from main_cwmc import compute_amplitude_cwmc
 from main_sv import compute_amplitude_sv
 from main_tn import compute_amplitude_tn
@@ -23,7 +21,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 if __name__ == "__main__":
 
     simulator = "cwmc"  # Choose from 'cwmc', 'sv', or 'tn'
-    circuit_type = "brickwork" # Options: "brickwork", "cnot-brickwork"
+    circuit_type = "brickwork"  # Options: "brickwork", "cnot-brickwork"
     transpiled = False  # Set to True if you used transpiled circuits
     encoding_method = "valid-paths"  # Options: "all-paths", "valid-path"
 
@@ -32,12 +30,11 @@ if __name__ == "__main__":
         "num_layers": range(10, 11, 1),
         "num_instances": range(1, 11),
     }
-    
+
     if transpiled:
         input_dir = os.path.join(f"instances/{circuit_type}-transpiled/")
     else:
         input_dir = os.path.join(f"instances/{circuit_type}/")
-
 
     parameters_list = []
     for num_qubits, num_layers, instance in itertools.product(

@@ -80,10 +80,12 @@ def test_solvers_brickwork_circuit(num_qubits, num_layers):
         temp_file.name, final_state, initial_state=initial_state
     )[0]
     amplitude_cwmc_valid_paths = cwmc_solver_valid_paths.compute_amplitude(
-        temp_file.name, final_state, initial_state=initial_state)[0]
+        temp_file.name, final_state, initial_state=initial_state
+    )[0]
 
     assert np.isclose(
-        amplitude_cwmc_valid_paths, amplitude_cwmc_all_paths, atol=1e-4), "The amplitudes from CWMCSolver with valid paths and all paths do not match."
+        amplitude_cwmc_valid_paths, amplitude_cwmc_all_paths, atol=1e-4
+    ), "The amplitudes from CWMCSolver with valid paths and all paths do not match."
     assert np.isclose(
         amplitude_sv, amplitude_cwmc_valid_paths, atol=1e-4
     ), "The amplitudes from SVSolver and CWMCSolver do not match."

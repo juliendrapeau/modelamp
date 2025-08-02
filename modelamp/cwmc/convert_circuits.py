@@ -214,7 +214,7 @@ class CircuitToCNFConverter:
         qubit_indices: list[int]
             The indices of the qubits for which the identity gate is applied.
         """
-        
+
         # Allocate variables for input and output qubits
         input_vars = self.var_mgr.get_output_vars(qubit_indices)
         output_vars = self.var_mgr.allocate_unique_vars(len(qubit_indices))
@@ -308,7 +308,9 @@ class CircuitToCNFConverter:
         self.var_mgr.update_io_map(qubit_indices, output_vars)
 
         # Add clauses to ensure input variables equal output variables
-        for input_var, output_var in zip(input_vars, output_vars[::-1]):  # Reverse order for SWAP
+        for input_var, output_var in zip(
+            input_vars, output_vars[::-1]
+        ):  # Reverse order for SWAP
             self.clauses.append([-input_var, output_var])
             self.clauses.append([input_var, -output_var])
 
@@ -323,26 +325,24 @@ class CircuitToCNFConverter:
         """
 
         if len(qubit_index) != 1:
-            raise ValueError(
-                "CNOT gate requires exactly one qubit index."
-            )
+            raise ValueError("CNOT gate requires exactly one qubit index.")
 
         # Allocate variables for control and target qubits
         input_var = self.var_mgr.get_output_vars(qubit_index)[0]
 
         output_var = self.var_mgr.allocate_unique_vars(1)[0]
         internal_var = self.var_mgr.allocate_unique_vars(1)[0]
-        
+
         # Update variable manager with new output variables
         self.var_mgr.update_io_map(qubit_index, [output_var])
 
         self.clauses.append([-input_var, -output_var, internal_var])
         self.clauses.append([input_var, -internal_var])
         self.clauses.append([output_var, -internal_var])
-        
-        self.weights[internal_var] = complex(-1/np.sqrt(2))
-        self.weights[-internal_var] = complex(1/np.sqrt(2))
-        
+
+        self.weights[internal_var] = complex(-1 / np.sqrt(2))
+        self.weights[-internal_var] = complex(1 / np.sqrt(2))
+
     def _add_t_gate(self, qubit_index):
         """
         Encode a CNOT gate as CNF clauses.
@@ -354,26 +354,31 @@ class CircuitToCNFConverter:
         """
 
         if len(qubit_index) != 1:
-            raise ValueError(
-                "CNOT gate requires exactly one qubit index."
-            )
+            raise ValueError("CNOT gate requires exactly one qubit index.")
 
         # Allocate variables for control and target qubits
         input_var = self.var_mgr.get_output_vars(qubit_index)
 
         output_var = self.var_mgr.allocate_unique_vars(1)
         internal_vars = self.var_mgr.allocate_unique_vars(3)
-        
+
         # Update variable manager with new output variables
         self.var_mgr.update_io_map(qubit_index, output_var)
 
         io_var = input_var + output_var
-        tensor = np.array([1, 0, 0, np.exp(np.pi*1j/4)], dtype=complex).reshape(2,2)
-        internals = [internal_vars[0], internal_vars[1], internal_vars[1], internal_vars[2]]
-        
+        tensor = np.array([1, 0, 0, np.exp(np.pi * 1j / 4)], dtype=complex).reshape(
+            2, 2
+        )
+        internals = [
+            internal_vars[0],
+            internal_vars[1],
+            internal_vars[1],
+            internal_vars[2],
+        ]
+
         # Iterate over all possible input combinations (2^k for inputs, 2^k for outputs)
         for bits, internal in zip(product([0, 1], repeat=2), internals):
-                
+
             neg_literals = [-v if b else v for b, v in zip(bits, io_var)]
 
             self.clauses.append([internal] + neg_literals)
@@ -384,7 +389,7 @@ class CircuitToCNFConverter:
             # Store weight (note reversed bit order for qiskit indexing)
             self.weights[internal] = tensor[tuple(bits[::-1])]
             self.weights[-internal] = complex(1)
-    
+
     def _dispatch_gate(self, instr):
         """
         Dispatch a gate instruction to the appropriate conversion method, which encodes the gate as CNF clauses depending on its type.
@@ -414,7 +419,7 @@ class CircuitToCNFConverter:
             gates[name](qubit_indices)
         else:
             self._add_general_unitary(matrix, qubit_indices)
-            
+
     def convert(
         self,
         circuit: QuantumCircuit,
